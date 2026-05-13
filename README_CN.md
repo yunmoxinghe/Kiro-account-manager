@@ -279,7 +279,7 @@ npx electron-builder --linux --arm64
 - **修复**: CodeWhisperer 模型 ID 解析不再把 `claude-opus-4.7` 错误映射到 Sonnet 模型 — 匹配逻辑新增模型家族互斥（opus/sonnet/haiku 不可交叉匹配）
 - **修复**: 模型匹配不再搜索 description 文本，降低新模型未在 `ListAvailableModels` 中时的误匹配
 
-#### Claude Code 兼容性增强（基于源码分析）
+#### Claude Code 兼容性增强
 - **修复**: Thinking 参数映射为 Kiro schema 枚举格式 `{ type: "adaptive" }`（之前为 `{ type: "enabled", budget_tokens: "adaptive" }`）— 完全匹配 Kiro 后端 `["adaptive", "disabled"]` 枚举约束
 - **新增**: `redacted_thinking` 加密思考块支持 — Kiro `ReasoningContentEvent.redactedContent` 字段现在被解码并转换为 Anthropic `redacted_thinking` 内容块（请求输入和响应输出双向支持）
 - **新增**: `effort` 参数透传 — Claude Code 4.6+ 的 `output_config.effort`（low/medium/high/max）现在转发到 Kiro `additionalModelRequestFields.effort`
