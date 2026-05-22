@@ -20,6 +20,7 @@ interface AccountData {
   switchTarget?: 'ide' | 'cli' | 'both'
   theme?: string
   darkMode?: boolean
+  autoTheme?: boolean
   language?: 'auto' | 'en' | 'zh'
   // 机器码管理
   machineIdConfig?: {
@@ -115,6 +116,9 @@ interface StatusResult {
 }
 
 interface KiroApi {
+  // 通知主进程渲染完成，可以显示窗口（防止白闪）
+  rendererReady: () => void
+  
   openExternal: (url: string, usePrivateMode?: boolean) => void
   getAppVersion: () => Promise<string>
   onAuthCallback: (callback: (data: { code: string; state: string }) => void) => () => void
@@ -623,6 +627,14 @@ interface KiroApi {
 
   // 监听反代状态变化事件
   onProxyStatusChange: (callback: (status: { running: boolean; port: number }) => void) => () => void
+
+  // ============ 系统主题监听 ============
+
+  // 监听系统主题变化 (Windows)
+  onSystemThemeChanged: (callback: (isDark: boolean) => void) => () => void
+
+  // 设置 nativeTheme
+  setNativeTheme: (theme: 'light' | 'dark' | 'system') => Promise<{ success: boolean }>
 
   // ============ Usage API 类型设置 ============
 

@@ -35,7 +35,7 @@ export function Sidebar({ currentPage, onPageChange, collapsed, onToggleCollapse
   return (
     <div 
       className={cn(
-        "h-screen bg-card border-r flex flex-col transition-all duration-300",
+        "h-screen bg-card border-r flex flex-col transition-all duration-300 backdrop-blur-xl",
         collapsed ? "w-16" : "w-52"
       )}
     >

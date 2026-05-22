@@ -2,38 +2,40 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Main Process",
+      "name": "Electron: Main",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceRoot}",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron-vite",
-      "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron-vite.cmd"
-      },
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}\\node_modules\\.bin\\electron-vite.cmd",
       "runtimeArgs": ["--sourcemap"],
       "env": {
         "REMOTE_DEBUGGING_PORT": "9222"
-      }
+      },
+      "outputCapture": "std",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "Debug Renderer Process",
-      "port": 9222,
-      "request": "attach",
+      "name": "Electron: Renderer",
       "type": "chrome",
+      "request": "attach",
+      "port": 9222,
       "webRoot": "${workspaceFolder}/src/renderer",
       "timeout": 60000,
-      "presentation": {
-        "hidden": true
-      }
+      "urlFilter": "http://localhost:*",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Electron: Dev (推荐)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": ["run", "dev"],
+      "outputCapture": "std",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
     }
   ],
-  "compounds": [
-    {
-      "name": "Debug All",
-      "configurations": ["Debug Main Process", "Debug Renderer Process"],
-      "presentation": {
-        "order": 1
-      }
-    }
-  ]
+  "compounds": []
 }

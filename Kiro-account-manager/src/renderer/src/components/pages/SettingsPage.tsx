@@ -133,8 +133,10 @@ export function SettingsPage() {
     setSwitchTarget,
     theme,
     darkMode,
+    autoTheme,
     setTheme,
     setDarkMode,
+    setAutoTheme,
     language,
     setLanguage,
     accounts,
@@ -407,20 +409,78 @@ export function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* 深色模式 */}
-          <div className="flex items-center justify-between">
+          {/* 主题模式选择 */}
+          <div className="space-y-3">
             <div>
-              <p className="font-medium">{isEn ? 'Dark Mode' : '深色模式'}</p>
-              <p className="text-sm text-muted-foreground">{isEn ? 'Toggle dark/light theme' : '切换深色/浅色主题'}</p>
+              <p className="font-medium mb-2">{isEn ? 'Theme Mode' : '主题模式'}</p>
+              <div className="flex gap-2">
+                <Button
+                  variant={autoTheme ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAutoTheme(!autoTheme)}
+                  className="flex-1"
+                >
+                  <Monitor className="h-4 w-4 mr-2" />
+                  {isEn ? 'Auto (Follow System)' : '自动（跟随系统）'}
+                </Button>
+                <Button
+                  variant={!autoTheme ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAutoTheme(false)}
+                  className="flex-1"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  {isEn ? 'Manual' : '手动'}
+                </Button>
+              </div>
             </div>
-            <Button
-              variant={darkMode ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDarkMode(!darkMode)}
-            >
-              {darkMode ? <Moon className="h-4 w-4 mr-2" /> : <Sun className="h-4 w-4 mr-2" />}
-              {darkMode ? (isEn ? 'Dark' : '深色') : (isEn ? 'Light' : '浅色')}
-            </Button>
+            
+            {/* 手动模式下的深色/浅色切换 */}
+            {!autoTheme && (
+              <div className="pt-2 border-t">
+                <p className="font-medium mb-2">{isEn ? 'Appearance' : '外观'}</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant={!darkMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDarkMode(false, true)}
+                    className="flex-1"
+                  >
+                    <Sun className="h-4 w-4 mr-2" />
+                    {isEn ? 'Light' : '浅色'}
+                  </Button>
+                  <Button
+                    variant={darkMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDarkMode(true, true)}
+                    className="flex-1"
+                  >
+                    <Moon className="h-4 w-4 mr-2" />
+                    {isEn ? 'Dark' : '深色'}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* 自动模式提示 */}
+            {autoTheme && (
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 flex items-start gap-2">
+                <Monitor className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium mb-1">
+                    {isEn ? 'Auto mode is enabled' : '已启用自动模式'}
+                  </p>
+                  <p>
+                    {isEn 
+                      ? 'Theme will automatically follow your Windows system settings. Current: ' 
+                      : '主题将自动跟随 Windows 系统设置。当前：'}
+                    <span className="font-medium">
+                      {darkMode ? (isEn ? 'Dark' : '深色') : (isEn ? 'Light' : '浅色')}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 主题颜色 */}

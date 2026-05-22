@@ -19,7 +19,9 @@ function App(): React.JSX.Element {
     accounts,
     activeAccountId,
     setActiveAccount,
-    checkAndRefreshExpiringTokens
+    checkAndRefreshExpiringTokens,
+    setDarkMode,
+    autoTheme
   } = useAccountsStore()
 
   // 切换到下一个可用账户
@@ -126,6 +128,23 @@ function App(): React.JSX.Element {
     }
   }, [handleBackgroundCheckResult])
 
+  // 监听系统主题变化 (Windows)
+  useEffect(() => {
+    if (typeof window.api.onSystemThemeChanged === 'function') {
+      const unsubscribe = window.api.onSystemThemeChanged((isDark) => {
+        // 只在启用自动模式时才应用系统主题
+        if (autoTheme) {
+          console.log('[App] System theme changed, applying dark mode:', isDark)
+          setDarkMode(isDark)
+        }
+      })
+      return () => {
+        unsubscribe()
+      }
+    }
+    return undefined
+  }, [setDarkMode, autoTheme])
+
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
@@ -156,7 +175,7 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <div className="h-screen bg-background flex">
+    <div className="h-screen flex bg-transparent">
       <Sidebar
         currentPage={currentPage}
         onPageChange={setCurrentPage}

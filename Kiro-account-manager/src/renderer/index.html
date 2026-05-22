@@ -8,6 +8,51 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
     />
+    <style>
+      /* 防止白闪：在 React 加载前就设置背景色 */
+      :root {
+        color-scheme: light;
+        --color-background: transparent;
+      }
+      
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: transparent;
+        color: #000000;
+        transition: none;
+      }
+      
+      /* 深色模式 */
+      html.dark {
+        color-scheme: dark;
+        --color-background: transparent;
+      }
+      
+      html.dark, html.dark body, html.dark #root {
+        background-color: transparent;
+        color: #ffffff;
+      }
+    </style>
+    <script>
+      // 在页面加载前立即应用主题，防止闪烁
+      (function() {
+        try {
+          // 从 localStorage 读取主题设置（Electron Store 会同步到这里）
+          const isDark = localStorage.getItem('kiro-dark-mode') === 'true';
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {
+          // 如果读取失败，使用系统主题
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+          }
+        }
+      })();
+    </script>
   </head>
 
   <body>

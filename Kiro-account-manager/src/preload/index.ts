@@ -3,6 +3,11 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
 const api = {
+  // 通知主进程渲染完成，可以显示窗口（防止白闪）
+  rendererReady: (): void => {
+    ipcRenderer.send('renderer-ready')
+  },
+
   // 打开外部链接
   openExternal: (url: string, usePrivateMode?: boolean): void => {
     ipcRenderer.send('open-external', url, usePrivateMode)
@@ -754,6 +759,24 @@ const api = {
     return () => {
       ipcRenderer.removeListener('proxy-status-change', handler)
     }
+  },
+
+  // ============ 系统主题监听 ============
+
+  // 监听系统主题变化 (Windows)
+  onSystemThemeChanged: (callback: (isDark: boolean) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, isDark: boolean): void => {
+      callback(isDark)
+    }
+    ipcRenderer.on('system-theme-changed', handler)
+    return () => {
+      ipcRenderer.removeListener('system-theme-changed', handler)
+    }
+  },
+
+  // 设置 nativeTheme
+  setNativeTheme: (theme: 'light' | 'dark' | 'system'): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('set-native-theme', theme)
   },
 
   // ============ Usage API 类型设置 ============

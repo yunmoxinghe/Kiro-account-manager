@@ -121,6 +121,7 @@ interface AccountsState {
   // 主题设置
   theme: string // 主题名称: default, purple, emerald, orange, rose, cyan, amber
   darkMode: boolean // 深色模式
+  autoTheme: boolean // 自动跟随系统主题 (Windows)
 
   // 语言设置
   language: 'auto' | 'en' | 'zh' // auto: 跟随系统
@@ -221,7 +222,8 @@ interface AccountsActions {
 
   // 主题设置
   setTheme: (theme: string) => void
-  setDarkMode: (enabled: boolean) => void
+  setDarkMode: (enabled: boolean, fromUser?: boolean) => void
+  setAutoTheme: (enabled: boolean) => void
   applyTheme: () => void
 
   // 语言设置
@@ -308,6 +310,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
   switchTarget: 'ide' as const,
   theme: 'default',
   darkMode: false,
+  autoTheme: false,
   language: 'auto',
 
   machineIdConfig: {
@@ -1436,6 +1439,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
           switchTarget: data.switchTarget ?? 'ide',
           theme: data.theme ?? 'default',
           darkMode: data.darkMode ?? false,
+          autoTheme: data.autoTheme ?? false,
           language: data.language ?? 'auto',
           machineIdConfig: data.machineIdConfig ?? {
             autoSwitchOnAccountChange: false,
@@ -1495,6 +1499,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
       switchTarget,
       theme,
       darkMode,
+      autoTheme,
       language,
       machineIdConfig,
       accountMachineIds,
@@ -1523,6 +1528,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
         switchTarget,
         theme,
         darkMode,
+        autoTheme,
         language,
         machineIdConfig,
         accountMachineIds,
@@ -1616,9 +1622,44 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
     get().applyTheme()
   },
 
-  setDarkMode: (enabled) => {
-    set({ darkMode: enabled })
+  setDarkMode: (enabled, fromUser = false) => {
+    // 如果是用户手动点击，关闭自动模式
+    if (fromUser) {
+      set({ darkMode: enabled, autoTheme: false })
+    } else {
+      // 系统自动切换，保持自动模式
+      set({ darkMode: enabled })
+    }
     get().saveToStorage()
+    get().applyTheme()
+    
+    // 通知主进程更新 nativeTheme
+    if (typeof window.api?.setNativeTheme === 'function') {
+      // 如果是自动模式，设置为 system；否则设置为具体的主题
+      const { autoTheme } = get()
+      window.api.setNativeTheme(autoTheme ? 'system' : (enabled ? 'dark' : 'light'))
+    }
+  },
+
+  setAutoTheme: async (enabled) => {
+    set({ autoTheme: enabled })
+    get().saveToStorage()
+    
+    // 通知主进程更新 nativeTheme
+    if (typeof window.api?.setNativeTheme === 'function') {
+      if (enabled) {
+        // 启用自动模式，设置为 system
+        await window.api.setNativeTheme('system')
+        // 请求主进程发送当前系统主题状态
+        // 主进程会通过 'system-theme-changed' 事件发送
+      } else {
+        // 禁用自动模式，使用当前的深色模式设置
+        const { darkMode } = get()
+        await window.api.setNativeTheme(darkMode ? 'dark' : 'light')
+      }
+    }
+    
+    // 应用当前主题
     get().applyTheme()
   },
 
@@ -1637,6 +1678,13 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
   applyTheme: () => {
     const { theme, darkMode } = get()
     const root = document.documentElement
+    
+    // 同步到 localStorage，供 HTML 预加载脚本使用
+    try {
+      localStorage.setItem('kiro-dark-mode', darkMode.toString())
+    } catch (e) {
+      console.warn('Failed to save theme to localStorage:', e)
+    }
     
     // 移除所有主题类（包含所有 21 个主题）
     root.classList.remove(

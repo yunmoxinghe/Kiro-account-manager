@@ -26,7 +26,7 @@ win:
   executableName: kiro-account-manager
   icon: resources/icon.ico
   legalTrademarks: Copyright 2026 Kiro
-  requestedExecutionLevel: asInvoker
+  requestedExecutionLevel: requireAdministrator
 nsis:
   artifactName: ${name}-${version}-${arch}-setup.${ext}
   shortcutName: Kiro 账号管理器

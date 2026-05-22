@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, globalShortcut } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, globalShortcut, nativeTheme } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import * as machineIdModule from './machineId'
 import { join } from 'path'
@@ -1471,15 +1471,36 @@ function initTray(): void {
 }
 
 function createWindow(): void {
+  // 读取保存的主题设置，决定初始主题
+  let shouldUseDark = false
+  try {
+    const savedData = store?.get('accountData') as any
+    const darkMode = savedData?.darkMode ?? false
+    const autoTheme = savedData?.autoTheme ?? false
+    
+    // 如果启用自动模式，使用系统主题；否则使用保存的设置
+    if (autoTheme) {
+      nativeTheme.themeSource = 'system'
+      shouldUseDark = nativeTheme.shouldUseDarkColors
+    } else {
+      nativeTheme.themeSource = darkMode ? 'dark' : 'light'
+      shouldUseDark = darkMode
+    }
+  } catch (e) {
+    // 如果读取失败，使用系统主题
+    nativeTheme.themeSource = 'system'
+    shouldUseDark = nativeTheme.shouldUseDarkColors
+  }
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
     title: `Kiro 账号管理器 v${app.getVersion()}`,
-    width: 1200,   // 刚好容纳 3 列卡片 (340*3 + 16*2 + 边距)
-    height: 1100,
-    minWidth: 800,
-    minHeight: 600,
+    width: 800,
+    height: 600,
     show: false,
     autoHideMenuBar: true,
+    backgroundColor: shouldUseDark ? '#1e1e1e' : '#ffffff', // 深色/浅色背景
+    backgroundMaterial: 'mica', // Windows 11 Mica 材质
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -1493,6 +1514,25 @@ function createWindow(): void {
     // 设置带版本号的标题（HTML 加载后会覆盖初始标题）
     mainWindow?.setTitle(`Kiro 账号管理器 v${app.getVersion()}`)
     mainWindow?.show()
+    
+    // Windows 系统主题自动跟随
+    if (process.platform === 'win32') {
+      // 发送初始主题状态
+      const shouldUseDarkColors = nativeTheme.shouldUseDarkColors
+      mainWindow?.webContents.send('system-theme-changed', shouldUseDarkColors)
+      
+      // 监听系统主题变化
+      nativeTheme.on('updated', () => {
+        const isDark = nativeTheme.shouldUseDarkColors
+        console.log('[Theme] System theme changed to:', isDark ? 'dark' : 'light')
+        
+        // 更新窗口背景颜色以保持云母效果
+        mainWindow?.setBackgroundColor(isDark ? '#1e1e1e' : '#ffffff')
+        
+        // 通知渲染进程
+        mainWindow?.webContents.send('system-theme-changed', isDark)
+      })
+    }
     
     // 检查代理服务自启动配置
     setTimeout(async () => {
@@ -1760,6 +1800,21 @@ app.whenReady().then(async () => {
   // IPC: 获取托盘设置
   ipcMain.handle('get-tray-settings', () => {
     return traySettings
+  })
+
+  // IPC: 设置 nativeTheme
+  ipcMain.handle('set-native-theme', (_event, theme: 'light' | 'dark' | 'system') => {
+    nativeTheme.themeSource = theme
+    
+    // 更新窗口背景颜色以保持云母效果
+    if (process.platform === 'win32' && mainWindow) {
+      const isDark = theme === 'system' 
+        ? nativeTheme.shouldUseDarkColors 
+        : theme === 'dark'
+      mainWindow.setBackgroundColor(isDark ? '#1e1e1e' : '#ffffff')
+    }
+    
+    return { success: true }
   })
 
   // IPC: 获取显示主窗口快捷键
