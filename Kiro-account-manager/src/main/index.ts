@@ -1470,13 +1470,21 @@ function initTray(): void {
   setTrayTooltip(`Kiro 账号管理器 v${app.getVersion()}`)
 }
 
-function createWindow(): void {
+async function createWindow(): Promise<void> {
+  // 确保 store 已初始化
+  await initStore()
+  
   // 读取保存的主题设置，决定初始主题
   let shouldUseDark = false
+  let windowMaterial: 'none' | 'mica' | 'acrylic' = 'none'
+  
   try {
     const savedData = store?.get('accountData') as any
     const darkMode = savedData?.darkMode ?? false
     const autoTheme = savedData?.autoTheme ?? false
+    windowMaterial = savedData?.windowMaterial ?? 'none'
+    
+    console.log('[Window] Loaded windowMaterial from store:', windowMaterial)
     
     // 如果启用自动模式，使用系统主题；否则使用保存的设置
     if (autoTheme) {
@@ -1487,20 +1495,20 @@ function createWindow(): void {
       shouldUseDark = darkMode
     }
   } catch (e) {
+    console.error('[Window] Failed to load settings:', e)
     // 如果读取失败，使用系统主题
     nativeTheme.themeSource = 'system'
     shouldUseDark = nativeTheme.shouldUseDarkColors
   }
 
   // Create the browser window.
-  mainWindow = new BrowserWindow({
+  const windowOptions: any = {
     title: `Kiro 账号管理器 v${app.getVersion()}`,
     width: 800,
     height: 600,
     show: false,
     autoHideMenuBar: true,
     backgroundColor: shouldUseDark ? '#1e1e1e' : '#ffffff', // 深色/浅色背景
-    backgroundMaterial: 'mica', // Windows 11 Mica 材质
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -1508,7 +1516,23 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false
     }
-  })
+  }
+  
+  mainWindow = new BrowserWindow(windowOptions)
+  
+  // 窗口创建后，应用保存的材质效果
+  if (windowMaterial !== 'none' && process.platform === 'win32') {
+    try {
+      if (typeof mainWindow.setBackgroundMaterial === 'function') {
+        mainWindow.setBackgroundMaterial(windowMaterial)
+        console.log('[Window] Applied backgroundMaterial after creation:', windowMaterial)
+      } else {
+        console.warn('[Window] setBackgroundMaterial method not available')
+      }
+    } catch (error) {
+      console.error('[Window] Failed to apply backgroundMaterial:', error)
+    }
+  }
 
   mainWindow.on('ready-to-show', () => {
     // 设置带版本号的标题（HTML 加载后会覆盖初始标题）
@@ -1815,6 +1839,36 @@ app.whenReady().then(async () => {
     }
     
     return { success: true }
+  })
+
+  // IPC: 设置窗口材质 (Windows 11)
+  ipcMain.handle('set-window-material', (_event, material: 'none' | 'mica' | 'acrylic') => {
+    if (process.platform === 'win32' && mainWindow) {
+      try {
+        // 'none' 表示默认不透明背景，不调用 setBackgroundMaterial
+        if (material === 'none') {
+          // 恢复为不透明背景
+          const isDark = nativeTheme.shouldUseDarkColors
+          mainWindow.setBackgroundColor(isDark ? '#1e1e1e' : '#ffffff')
+          // 尝试重新创建窗口以移除材质效果（需要重启应用）
+          console.log('[Window] Background material set to: none (requires restart)')
+        } else {
+          // 检查方法是否存在
+          if (typeof mainWindow.setBackgroundMaterial === 'function') {
+            mainWindow.setBackgroundMaterial(material)
+            console.log(`[Window] Background material set to: ${material}`)
+          } else {
+            console.error('[Window] setBackgroundMaterial method not available')
+            return { success: false, error: 'setBackgroundMaterial not supported in this Electron version' }
+          }
+        }
+        return { success: true }
+      } catch (error) {
+        console.error('[Window] Failed to set background material:', error)
+        return { success: false, error: String(error) }
+      }
+    }
+    return { success: false, error: 'Not supported on this platform' }
   })
 
   // IPC: 获取显示主窗口快捷键
@@ -5958,7 +6012,7 @@ app.whenReady().then(async () => {
     }
   }
 
-  createWindow()
+  await createWindow()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

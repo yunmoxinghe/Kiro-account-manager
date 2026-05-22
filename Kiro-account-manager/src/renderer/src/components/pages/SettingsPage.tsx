@@ -134,9 +134,11 @@ export function SettingsPage() {
     theme,
     darkMode,
     autoTheme,
+    windowMaterial,
     setTheme,
     setDarkMode,
     setAutoTheme,
+    setWindowMaterial,
     language,
     setLanguage,
     accounts,
@@ -532,6 +534,44 @@ export function SettingsPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Windows 窗口材质 */}
+          <div className="pt-2 border-t">
+            <div>
+              <p className="font-medium mb-2">{isEn ? 'Window Material (Windows 11)' : '窗口材质 (Windows 11)'}</p>
+              <div className="flex gap-2">
+                <Button
+                  variant={windowMaterial === 'none' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setWindowMaterial('none')}
+                  className="flex-1"
+                >
+                  {isEn ? 'Default' : '默认'}
+                </Button>
+                <Button
+                  variant={windowMaterial === 'mica' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setWindowMaterial('mica')}
+                  className="flex-1"
+                >
+                  {isEn ? 'Mica' : '云母'}
+                </Button>
+                <Button
+                  variant={windowMaterial === 'acrylic' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setWindowMaterial('acrylic')}
+                  className="flex-1"
+                >
+                  {isEn ? 'Acrylic' : '亚克力'}
+                </Button>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">
+              <p>• {isEn ? 'Mica: Subtle translucent effect with system wallpaper' : '云母：微妙的半透明效果，融合系统壁纸'}</p>
+              <p>• {isEn ? 'Acrylic: Frosted glass effect with blur' : '亚克力：毛玻璃模糊效果'}</p>
+              <p>• {isEn ? 'Only available on Windows 11' : '仅在 Windows 11 上可用'}</p>
+            </div>
           </div>
         </CardContent>
       </Card>

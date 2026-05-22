@@ -779,6 +779,11 @@ const api = {
     return ipcRenderer.invoke('set-native-theme', theme)
   },
 
+  // 设置窗口材质
+  setWindowMaterial: (material: 'none' | 'mica' | 'acrylic'): Promise<{ success: boolean; error?: string }> => {
+    return ipcRenderer.invoke('set-window-material', material)
+  },
+
   // ============ Usage API 类型设置 ============
 
   // 获取 Usage API 类型

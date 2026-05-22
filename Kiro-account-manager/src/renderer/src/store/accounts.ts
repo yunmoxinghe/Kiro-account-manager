@@ -122,6 +122,7 @@ interface AccountsState {
   theme: string // 主题名称: default, purple, emerald, orange, rose, cyan, amber
   darkMode: boolean // 深色模式
   autoTheme: boolean // 自动跟随系统主题 (Windows)
+  windowMaterial: 'none' | 'mica' | 'acrylic' // Windows 窗口材质效果
 
   // 语言设置
   language: 'auto' | 'en' | 'zh' // auto: 跟随系统
@@ -224,6 +225,7 @@ interface AccountsActions {
   setTheme: (theme: string) => void
   setDarkMode: (enabled: boolean, fromUser?: boolean) => void
   setAutoTheme: (enabled: boolean) => void
+  setWindowMaterial: (material: 'none' | 'mica' | 'acrylic') => void
   applyTheme: () => void
 
   // 语言设置
@@ -311,6 +313,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
   theme: 'default',
   darkMode: false,
   autoTheme: false,
+  windowMaterial: 'none',
   language: 'auto',
 
   machineIdConfig: {
@@ -1440,6 +1443,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
           theme: data.theme ?? 'default',
           darkMode: data.darkMode ?? false,
           autoTheme: data.autoTheme ?? false,
+          windowMaterial: data.windowMaterial ?? 'none',
           language: data.language ?? 'auto',
           machineIdConfig: data.machineIdConfig ?? {
             autoSwitchOnAccountChange: false,
@@ -1500,6 +1504,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
       theme,
       darkMode,
       autoTheme,
+      windowMaterial,
       language,
       machineIdConfig,
       accountMachineIds,
@@ -1529,6 +1534,7 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
         theme,
         darkMode,
         autoTheme,
+        windowMaterial,
         language,
         machineIdConfig,
         accountMachineIds,
@@ -1661,6 +1667,16 @@ export const useAccountsStore = create<AccountsStore>()((set, get) => ({
     
     // 应用当前主题
     get().applyTheme()
+  },
+
+  setWindowMaterial: (material) => {
+    set({ windowMaterial: material })
+    get().saveToStorage()
+    
+    // 通知主进程更新窗口材质
+    if (typeof window.api?.setWindowMaterial === 'function') {
+      window.api.setWindowMaterial(material)
+    }
   },
 
   // ==================== 语言设置 ====================
